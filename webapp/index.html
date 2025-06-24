@@ -1,0 +1,111 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CASH - Калькулятор зарплаты</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <h1>💵 CASH</h1>
+                <p>Калькулятор зарплаты</p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="calculator-card">
+                <h2>Расчет заработной платы</h2>
+                
+                <form id="salaryForm" class="form">
+                    <div class="form-group">
+                        <label for="grossSalary">Зарплата до вычетов (руб.)</label>
+                        <input type="number" id="grossSalary" placeholder="Введите сумму" min="0" step="0.01">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taxRate">Налоговая ставка (%)</label>
+                        <select id="taxRate">
+                            <option value="13">13% - Резидент РФ</option>
+                            <option value="30">30% - Нерезидент РФ</option>
+                            <option value="15">15% - Доходы свыше 5 млн руб.</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="socialDeductions">Социальные взносы (%)</label>
+                        <input type="number" id="socialDeductions" value="22" min="0" max="100" step="0.1">
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="hasDeductions">
+                            <span class="checkmark"></span>
+                            Применить стандартные вычеты
+                        </label>
+                    </div>
+
+                    <div class="form-group" id="deductionsGroup" style="display: none;">
+                        <label for="deductionAmount">Сумма вычетов (руб.)</label>
+                        <input type="number" id="deductionAmount" placeholder="Например, 1400" min="0" step="0.01">
+                    </div>
+
+                    <button type="submit" class="calculate-btn">
+                        <span>Рассчитать</span>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </form>
+
+                <div id="results" class="results" style="display: none;">
+                    <h3>Результаты расчета</h3>
+                    <div class="result-grid">
+                        <div class="result-item">
+                            <span class="label">Зарплата до вычетов:</span>
+                            <span class="value" id="resultGross">0 ₽</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="label">НДФЛ:</span>
+                            <span class="value" id="resultTax">0 ₽</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="label">Социальные взносы:</span>
+                            <span class="value" id="resultSocial">0 ₽</span>
+                        </div>
+                        <div class="result-item highlight">
+                            <span class="label">К выдаче на руки:</span>
+                            <span class="value" id="resultNet">0 ₽</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-cards">
+                <div class="info-card">
+                    <h3>📊 Точные расчеты</h3>
+                    <p>Калькулятор учитывает все актуальные налоговые ставки и социальные взносы</p>
+                </div>
+                <div class="info-card">
+                    <h3>⚡ Быстро и просто</h3>
+                    <p>Получите результат мгновенно без сложных формул и вычислений</p>
+                </div>
+                <div class="info-card">
+                    <h3>🔒 Безопасно</h3>
+                    <p>Все расчеты выполняются локально, ваши данные не передаются третьим лицам</p>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 CASH. Калькулятор зарплаты для Telegram Web App</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
