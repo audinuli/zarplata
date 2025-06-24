@@ -20,8 +20,10 @@ back_kb = ReplyKeyboardMarkup(
 # Команда открытия Web App
 @router.message(Command("cash"))
 async def open_cash_webapp(message: types.Message):
+    # Используем домен Replit для Web App
+    repl_url = "https://python-template-paudinulibot.replit.app"
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Открыть CASH 💵", web_app=WebAppInfo(url="https://zarplata-one.vercel.app/"))]
+        [InlineKeyboardButton(text="Открыть CASH 💵", web_app=WebAppInfo(url=repl_url))]
     ])
     await message.answer(
         "💼 <b>CASH - Калькулятор зарплаты</b>\n\n"
