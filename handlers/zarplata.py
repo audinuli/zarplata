@@ -42,27 +42,28 @@ async def handle_webapp_data(message: types.Message):
     try:
         data = json.loads(message.web_app_data.data)
         
-        gross_salary = data.get('grossSalary', 0)
-        net_salary = data.get('netSalary', 0)
-        income_tax = data.get('incomeTax', 0)
-        social_contributions = data.get('socialContributions', 0)
-        tax_rate = data.get('taxRate', 13)
-        deductions = data.get('deductions', 0)
+        deposit = data.get('deposit', 0)
+        fee_percent = data.get('feePercent', 0)
+        fee = data.get('fee', 0)
+        net_amount = data.get('netAmount', 0)
+        usd_rate = data.get('usdRate', 0)
+        usd_amount = data.get('usdAmount', 0)
+        salary_percent = data.get('salaryPercent', 0)
+        salary_fund = data.get('salaryFund', 0)
+        participants = data.get('participants', 0)
+        per_person = data.get('perPerson', 0)
         
         result_text = (
-            f"💰 <b>Результаты расчета зарплаты</b>\n\n"
-            f"📊 <b>Зарплата до вычетов:</b> {gross_salary:,.0f} ₽\n"
-            f"📋 <b>Налоговая ставка:</b> {tax_rate}%\n"
-        )
-        
-        if deductions > 0:
-            result_text += f"💳 <b>Налоговые вычеты:</b> {deductions:,.0f} ₽\n"
-        
-        result_text += (
-            f"\n💸 <b>Удержания:</b>\n"
-            f"• НДФЛ: {income_tax:,.0f} ₽\n"
-            f"• Соц. взносы: {social_contributions:,.0f} ₽\n\n"
-            f"✅ <b>К выдаче на руки: {net_salary:,.0f} ₽</b>"
+            f"💵 <b>Результаты расчета зарплаты</b>\n\n"
+            f"💰 <b>Каждому участнику: ${per_person:.2f}</b>\n\n"
+            f"📊 <b>Детализация расчета:</b>\n"
+            f"• Депозит: {deposit:,.0f} ₽\n"
+            f"• Удержание ({fee_percent}%): {fee:,.0f} ₽\n"
+            f"• Чистая сумма: {net_amount:,.0f} ₽\n"
+            f"• В долларах (курс {usd_rate}): ${usd_amount:.2f}\n"
+            f"• Фонд зарплаты ({salary_percent}%): ${salary_fund:.2f}\n"
+            f"• Участников: {participants} чел.\n\n"
+            f"✅ <b>Итого на каждого: ${per_person:.2f}</b>"
         )
         
         await message.answer(result_text, parse_mode="HTML")

@@ -18,92 +18,155 @@
         </header>
 
         <main class="main-content">
-            <div class="calculator-card">
-                <h2>Расчет заработной платы</h2>
-                
-                <form id="salaryForm" class="form">
-                    <div class="form-group">
-                        <label for="grossSalary">Зарплата до вычетов (руб.)</label>
-                        <input type="number" id="grossSalary" placeholder="Введите сумму" min="0" step="0.01">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="taxRate">Налоговая ставка (%)</label>
-                        <select id="taxRate">
-                            <option value="13">13% - Резидент РФ</option>
-                            <option value="30">30% - Нерезидент РФ</option>
-                            <option value="15">15% - Доходы свыше 5 млн руб.</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="socialDeductions">Социальные взносы (%)</label>
-                        <input type="number" id="socialDeductions" value="22" min="0" max="100" step="0.1">
-                    </div>
-
-                    <div class="form-group checkbox-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="hasDeductions">
-                            <span class="checkmark"></span>
-                            Применить стандартные вычеты
-                        </label>
-                    </div>
-
-                    <div class="form-group" id="deductionsGroup" style="display: none;">
-                        <label for="deductionAmount">Сумма вычетов (руб.)</label>
-                        <input type="number" id="deductionAmount" placeholder="Например, 1400" min="0" step="0.01">
-                    </div>
-
-                    <button type="submit" class="calculate-btn">
-                        <span>Рассчитать</span>
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                </form>
-
-                <div id="results" class="results" style="display: none;">
-                    <h3>Результаты расчета</h3>
-                    <div class="result-grid">
-                        <div class="result-item">
-                            <span class="label">Зарплата до вычетов:</span>
-                            <span class="value" id="resultGross">0 ₽</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">НДФЛ:</span>
-                            <span class="value" id="resultTax">0 ₽</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">Социальные взносы:</span>
-                            <span class="value" id="resultSocial">0 ₽</span>
-                        </div>
-                        <div class="result-item highlight">
-                            <span class="label">К выдаче на руки:</span>
-                            <span class="value" id="resultNet">0 ₽</span>
-                        </div>
-                    </div>
+            <!-- Шаг 1: Депозит -->
+            <div class="step-card active" id="step1">
+                <div class="step-header">
+                    <span class="step-number">1</span>
+                    <h2>Какая сумма депозита?</h2>
+                </div>
+                <div class="form-group">
+                    <label>Введите сумму депозита в рублях</label>
+                    <input type="number" id="deposit" placeholder="Например: 1 000 000" min="0" step="0.01">
+                    <span class="currency">₽</span>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="nextStep(1)">Далее →</button>
                 </div>
             </div>
 
-            <div class="info-cards">
-                <div class="info-card">
-                    <h3>📊 Точные расчеты</h3>
-                    <p>Калькулятор учитывает все актуальные налоговые ставки и социальные взносы</p>
+            <!-- Шаг 2: Процент удержания -->
+            <div class="step-card" id="step2">
+                <div class="step-header">
+                    <span class="step-number">2</span>
+                    <h2>Сколько процентов удерживается за услуги?</h2>
                 </div>
-                <div class="info-card">
-                    <h3>⚡ Быстро и просто</h3>
-                    <p>Получите результат мгновенно без сложных формул и вычислений</p>
+                <div class="form-group">
+                    <label>Укажите процент удержания</label>
+                    <input type="number" id="feePercent" placeholder="Например: 18" min="0" max="100" step="0.1">
+                    <span class="currency">%</span>
                 </div>
-                <div class="info-card">
-                    <h3>🔒 Безопасно</h3>
-                    <p>Все расчеты выполняются локально, ваши данные не передаются третьим лицам</p>
+                <div class="calculation-preview" id="feePreview"></div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="prevStep(2)">⬅️ Назад</button>
+                    <button class="btn btn-primary" onclick="nextStep(2)">Далее →</button>
+                </div>
+            </div>
+
+            <!-- Шаг 3: Курс доллара -->
+            <div class="step-card" id="step3">
+                <div class="step-header">
+                    <span class="step-number">3</span>
+                    <h2>Какой курс доллара сейчас?</h2>
+                </div>
+                <div class="form-group">
+                    <label>Введите текущий курс USD</label>
+                    <input type="number" id="usdRate" placeholder="Например: 89.5" min="0" step="0.01">
+                    <span class="currency">₽ за $</span>
+                </div>
+                <div class="calculation-preview" id="usdPreview"></div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="prevStep(3)">⬅️ Назад</button>
+                    <button class="btn btn-primary" onclick="nextStep(3)">Далее →</button>
+                </div>
+            </div>
+
+            <!-- Шаг 4: Процент на зарплату -->
+            <div class="step-card" id="step4">
+                <div class="step-header">
+                    <span class="step-number">4</span>
+                    <h2>Сколько процентов идет на зарплату?</h2>
+                </div>
+                <div class="form-group">
+                    <label>Укажите процент от суммы в долларах</label>
+                    <input type="number" id="salaryPercent" placeholder="Например: 25" min="0" max="100" step="0.1">
+                    <span class="currency">%</span>
+                </div>
+                <div class="calculation-preview" id="salaryPreview"></div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="prevStep(4)">⬅️ Назад</button>
+                    <button class="btn btn-primary" onclick="nextStep(4)">Далее →</button>
+                </div>
+            </div>
+
+            <!-- Шаг 5: Количество участников -->
+            <div class="step-card" id="step5">
+                <div class="step-header">
+                    <span class="step-number">5</span>
+                    <h2>Сколько человек в команде?</h2>
+                </div>
+                <div class="form-group">
+                    <label>Количество участников для распределения</label>
+                    <input type="number" id="participants" placeholder="Например: 4" min="1" step="1">
+                    <span class="currency">чел.</span>
+                </div>
+                <div class="calculation-preview" id="participantsPreview"></div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="prevStep(5)">⬅️ Назад</button>
+                    <button class="btn btn-primary" onclick="calculateFinal()">Рассчитать 🧮</button>
+                </div>
+            </div>
+
+            <!-- Результат -->
+            <div class="step-card result-card" id="result">
+                <div class="step-header">
+                    <span class="step-number">✅</span>
+                    <h2>Результат расчета</h2>
+                </div>
+                
+                <div class="result-summary">
+                    <div class="main-result">
+                        <div class="result-value" id="finalResult">0 $</div>
+                        <div class="result-label">Каждому участнику</div>
+                    </div>
+                </div>
+
+                <div class="calculation-breakdown">
+                    <h3>📊 Детализация расчета:</h3>
+                    <div class="breakdown-item">
+                        <span>Депозит:</span>
+                        <span id="summaryDeposit">0 ₽</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span>Удержание (<span id="summaryFeePercent">0</span>%):</span>
+                        <span id="summaryFee">0 ₽</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span>Чистая сумма:</span>
+                        <span id="summaryNet">0 ₽</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span>В долларах (курс <span id="summaryRate">0</span>):</span>
+                        <span id="summaryUsd">0 $</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span>Фонд зарплаты (<span id="summarySalaryPercent">0</span>%):</span>
+                        <span id="summarySalaryFund">0 $</span>
+                    </div>
+                    <div class="breakdown-item highlight">
+                        <span>На <span id="summaryParticipants">0</span> участников:</span>
+                        <span id="summaryPerPerson">0 $</span>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="prevStep(6)">⬅️ Назад</button>
+                    <button class="btn btn-success" onclick="restart()">🔁 Повторить расчет</button>
+                </div>
+            </div>
+
+            <!-- Прогресс-бар -->
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+                <div class="progress-steps">
+                    <div class="progress-step active" data-step="1">1</div>
+                    <div class="progress-step" data-step="2">2</div>
+                    <div class="progress-step" data-step="3">3</div>
+                    <div class="progress-step" data-step="4">4</div>
+                    <div class="progress-step" data-step="5">5</div>
+                    <div class="progress-step" data-step="6">✓</div>
                 </div>
             </div>
         </main>
-
-        <footer class="footer">
-            <p>&copy; 2024 CASH. Калькулятор зарплаты для Telegram Web App</p>
-        </footer>
     </div>
 
     <script src="script.js"></script>

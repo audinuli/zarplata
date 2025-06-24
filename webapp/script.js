@@ -10,115 +10,247 @@ if (window.Telegram && window.Telegram.WebApp) {
     document.body.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
 }
 
-// DOM elements
-const form = document.getElementById('salaryForm');
-const resultsDiv = document.getElementById('results');
-const deductionsCheckbox = document.getElementById('hasDeductions');
-const deductionsGroup = document.getElementById('deductionsGroup');
+// Global variables
+let currentStep = 1;
+const totalSteps = 6; // 5 input steps + 1 result step
+let calculationData = {};
 
-// Show/hide deductions input
-deductionsCheckbox.addEventListener('change', function() {
-    deductionsGroup.style.display = this.checked ? 'block' : 'none';
-    if (!this.checked) {
-        document.getElementById('deductionAmount').value = '';
-    }
-});
-
-// Form submission
-form.addEventListener('submit', function(e) {
-    e.preventDefault();
-    calculateSalary();
-});
-
-// Input validation and real-time formatting
-document.getElementById('grossSalary').addEventListener('input', function(e) {
-    const value = parseFloat(e.target.value);
-    if (value < 0) e.target.value = 0;
-});
-
-document.getElementById('socialDeductions').addEventListener('input', function(e) {
-    const value = parseFloat(e.target.value);
-    if (value < 0) e.target.value = 0;
-    if (value > 100) e.target.value = 100;
-});
-
-document.getElementById('deductionAmount').addEventListener('input', function(e) {
-    const value = parseFloat(e.target.value);
-    if (value < 0) e.target.value = 0;
-});
-
-function calculateSalary() {
-    // Get form values
-    const grossSalary = parseFloat(document.getElementById('grossSalary').value) || 0;
-    const taxRate = parseFloat(document.getElementById('taxRate').value) || 13;
-    const socialRate = parseFloat(document.getElementById('socialDeductions').value) || 22;
-    const hasDeductions = document.getElementById('hasDeductions').checked;
-    const deductionAmount = hasDeductions ? (parseFloat(document.getElementById('deductionAmount').value) || 0) : 0;
-
-    // Validation
-    if (grossSalary <= 0) {
-        showError('Пожалуйста, введите корректную сумму зарплаты');
-        return;
-    }
-
-    // Calculate taxes and deductions
-    const taxableIncome = Math.max(0, grossSalary - deductionAmount);
-    const incomeTax = (taxableIncome * taxRate) / 100;
-    const socialContributions = (grossSalary * socialRate) / 100;
-    const netSalary = grossSalary - incomeTax - socialContributions;
-
-    // Display results
-    displayResults({
-        gross: grossSalary,
-        tax: incomeTax,
-        social: socialContributions,
-        net: Math.max(0, netSalary),
-        deductions: deductionAmount
+// Progress management
+function updateProgress() {
+    const progressFill = document.getElementById('progressFill');
+    const progressSteps = document.querySelectorAll('.progress-step');
+    
+    // Update progress bar fill
+    const progressPercent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+    progressFill.style.width = progressPercent + '%';
+    
+    // Update step indicators
+    progressSteps.forEach((step, index) => {
+        const stepNumber = index + 1;
+        step.classList.remove('active', 'completed');
+        
+        if (stepNumber < currentStep) {
+            step.classList.add('completed');
+        } else if (stepNumber === currentStep) {
+            step.classList.add('active');
+        }
     });
+}
 
-    // Show results section
-    resultsDiv.style.display = 'block';
-    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+// Navigation functions
+function showStep(stepNumber) {
+    // Hide all steps
+    document.querySelectorAll('.step-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    
+    // Show target step
+    const targetStep = document.getElementById(`step${stepNumber}`) || document.getElementById('result');
+    if (targetStep) {
+        targetStep.classList.add('active');
+    }
+    
+    currentStep = stepNumber;
+    updateProgress();
+}
 
+function nextStep(step) {
+    if (validateStep(step)) {
+        if (step < 5) {
+            showStep(step + 1);
+            updatePreview(step + 1);
+        }
+    }
+}
+
+function prevStep(step) {
+    if (step > 1) {
+        showStep(step - 1);
+        if (step - 1 > 1) {
+            updatePreview(step - 1);
+        }
+    }
+}
+
+// Validation
+function validateStep(step) {
+    const inputs = {
+        1: 'deposit',
+        2: 'feePercent',
+        3: 'usdRate',
+        4: 'salaryPercent',
+        5: 'participants'
+    };
+    
+    const inputId = inputs[step];
+    const input = document.getElementById(inputId);
+    const value = parseFloat(input.value);
+    
+    if (!value || value <= 0) {
+        showError(`Пожалуйста, введите корректное значение`);
+        input.focus();
+        return false;
+    }
+    
+    // Additional validations
+    if (step === 2 || step === 4) { // Percentages
+        if (value > 100) {
+            showError(`Процент не может быть больше 100%`);
+            input.focus();
+            return false;
+        }
+    }
+    
+    if (step === 5) { // Participants must be integer
+        if (!Number.isInteger(value)) {
+            showError(`Количество участников должно быть целым числом`);
+            input.focus();
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+// Preview calculations
+function updatePreview(step) {
+    const deposit = parseFloat(document.getElementById('deposit').value) || 0;
+    const feePercent = parseFloat(document.getElementById('feePercent').value) || 0;
+    const usdRate = parseFloat(document.getElementById('usdRate').value) || 0;
+    const salaryPercent = parseFloat(document.getElementById('salaryPercent').value) || 0;
+    const participants = parseInt(document.getElementById('participants').value) || 0;
+    
+    if (step === 2 && deposit > 0 && feePercent > 0) {
+        const fee = deposit * (feePercent / 100);
+        const netAmount = deposit - fee;
+        document.getElementById('feePreview').innerHTML = `
+            <strong>Расчет:</strong><br>
+            Удержание: ${formatCurrency(fee)}<br>
+            Чистая сумма: ${formatCurrency(netAmount)}
+        `;
+    }
+    
+    if (step === 3 && deposit > 0 && feePercent > 0 && usdRate > 0) {
+        const fee = deposit * (feePercent / 100);
+        const netAmount = deposit - fee;
+        const usdAmount = netAmount / usdRate;
+        document.getElementById('usdPreview').innerHTML = `
+            <strong>В долларах:</strong><br>
+            ${formatCurrency(netAmount)} ÷ ${usdRate} = ${formatUSD(usdAmount)}
+        `;
+    }
+    
+    if (step === 4 && deposit > 0 && feePercent > 0 && usdRate > 0 && salaryPercent > 0) {
+        const fee = deposit * (feePercent / 100);
+        const netAmount = deposit - fee;
+        const usdAmount = netAmount / usdRate;
+        const salaryFund = usdAmount * (salaryPercent / 100);
+        document.getElementById('salaryPreview').innerHTML = `
+            <strong>Фонд зарплаты:</strong><br>
+            ${formatUSD(usdAmount)} × ${salaryPercent}% = ${formatUSD(salaryFund)}
+        `;
+    }
+    
+    if (step === 5 && deposit > 0 && feePercent > 0 && usdRate > 0 && salaryPercent > 0 && participants > 0) {
+        const fee = deposit * (feePercent / 100);
+        const netAmount = deposit - fee;
+        const usdAmount = netAmount / usdRate;
+        const salaryFund = usdAmount * (salaryPercent / 100);
+        const perPerson = salaryFund / participants;
+        document.getElementById('participantsPreview').innerHTML = `
+            <strong>На каждого:</strong><br>
+            ${formatUSD(salaryFund)} ÷ ${participants} = ${formatUSD(perPerson)}
+        `;
+    }
+}
+
+// Final calculation
+function calculateFinal() {
+    if (!validateStep(5)) return;
+    
+    const deposit = parseFloat(document.getElementById('deposit').value);
+    const feePercent = parseFloat(document.getElementById('feePercent').value);
+    const usdRate = parseFloat(document.getElementById('usdRate').value);
+    const salaryPercent = parseFloat(document.getElementById('salaryPercent').value);
+    const participants = parseInt(document.getElementById('participants').value);
+    
+    // Calculations
+    const fee = deposit * (feePercent / 100);
+    const netAmount = deposit - fee;
+    const usdAmount = netAmount / usdRate;
+    const salaryFund = usdAmount * (salaryPercent / 100);
+    const perPerson = salaryFund / participants;
+    
+    // Store for potential resend to bot
+    calculationData = {
+        deposit,
+        feePercent,
+        fee,
+        netAmount,
+        usdRate,
+        usdAmount,
+        salaryPercent,
+        salaryFund,
+        participants,
+        perPerson
+    };
+    
+    // Display results
+    document.getElementById('finalResult').textContent = formatUSD(perPerson);
+    document.getElementById('summaryDeposit').textContent = formatCurrency(deposit);
+    document.getElementById('summaryFeePercent').textContent = feePercent + '%';
+    document.getElementById('summaryFee').textContent = formatCurrency(fee);
+    document.getElementById('summaryNet').textContent = formatCurrency(netAmount);
+    document.getElementById('summaryRate').textContent = usdRate;
+    document.getElementById('summaryUsd').textContent = formatUSD(usdAmount);
+    document.getElementById('summarySalaryPercent').textContent = salaryPercent + '%';
+    document.getElementById('summarySalaryFund').textContent = formatUSD(salaryFund);
+    document.getElementById('summaryParticipants').textContent = participants;
+    document.getElementById('summaryPerPerson').textContent = formatUSD(perPerson);
+    
+    // Show result step
+    showStep(6);
+    
     // Send data to Telegram if available
     if (window.Telegram && window.Telegram.WebApp) {
-        const resultData = {
-            grossSalary: grossSalary,
-            netSalary: Math.max(0, netSalary),
-            incomeTax: incomeTax,
-            socialContributions: socialContributions,
-            taxRate: taxRate,
-            deductions: deductionAmount
-        };
-        
-        window.Telegram.WebApp.sendData(JSON.stringify(resultData));
+        window.Telegram.WebApp.sendData(JSON.stringify(calculationData));
     }
 }
 
-function displayResults(data) {
-    document.getElementById('resultGross').textContent = formatCurrency(data.gross);
-    document.getElementById('resultTax').textContent = formatCurrency(data.tax);
-    document.getElementById('resultSocial').textContent = formatCurrency(data.social);
-    document.getElementById('resultNet').textContent = formatCurrency(data.net);
-
-    // Add animation
-    const resultItems = document.querySelectorAll('.result-item');
-    resultItems.forEach((item, index) => {
-        item.style.opacity = '0';
-        item.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-            item.style.transition = 'all 0.3s ease';
-            item.style.opacity = '1';
-            item.style.transform = 'translateY(0)';
-        }, index * 100);
+// Restart calculation
+function restart() {
+    currentStep = 1;
+    calculationData = {};
+    
+    // Clear all inputs
+    document.querySelectorAll('input').forEach(input => {
+        input.value = '';
     });
+    
+    // Clear all previews
+    document.querySelectorAll('.calculation-preview').forEach(preview => {
+        preview.innerHTML = '';
+    });
+    
+    // Show first step
+    showStep(1);
 }
 
+// Utility functions
 function formatCurrency(amount) {
     return new Intl.NumberFormat('ru-RU', {
         style: 'currency',
         currency: 'RUB',
         minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    }).format(amount);
+}
+
+function formatUSD(amount) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
         maximumFractionDigits: 2
     }).format(amount);
 }
@@ -139,7 +271,7 @@ function showError(message) {
         box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         z-index: 1000;
         font-weight: 500;
-        animation: slideIn 0.3s ease;
+        animation: slideInError 0.3s ease;
     `;
 
     // Add animation keyframes
@@ -147,7 +279,7 @@ function showError(message) {
         const style = document.createElement('style');
         style.id = 'toast-styles';
         style.textContent = `
-            @keyframes slideIn {
+            @keyframes slideInError {
                 from { transform: translateX(100%); opacity: 0; }
                 to { transform: translateX(0); opacity: 1; }
             }
@@ -159,7 +291,7 @@ function showError(message) {
 
     // Remove toast after 3 seconds
     setTimeout(() => {
-        toast.style.animation = 'slideIn 0.3s ease reverse';
+        toast.style.animation = 'slideInError 0.3s ease reverse';
         setTimeout(() => {
             if (toast.parentNode) {
                 toast.parentNode.removeChild(toast);
@@ -168,59 +300,27 @@ function showError(message) {
     }, 3000);
 }
 
-// Add smooth scrolling for better UX
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth'
-            });
-        }
-    });
-});
-
-// Add loading state to calculate button
-const calculateBtn = document.querySelector('.calculate-btn');
-const originalBtnText = calculateBtn.innerHTML;
-
-function showLoading() {
-    calculateBtn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="animation: spin 1s linear infinite;">
-            <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" stroke-dasharray="12 12" stroke-linecap="round"/>
-        </svg>
-        <span>Рассчитываем...</span>
-    `;
-    calculateBtn.disabled = true;
-}
-
-function hideLoading() {
-    calculateBtn.innerHTML = originalBtnText;
-    calculateBtn.disabled = false;
-}
-
-// Add spinning animation
-if (!document.querySelector('#loading-styles')) {
-    const style = document.createElement('style');
-    style.id = 'loading-styles';
-    style.textContent = `
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-// Enhance form submission with loading state
-const originalCalculateSalary = calculateSalary;
-calculateSalary = function() {
-    showLoading();
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Add input event listeners for real-time preview updates
+    document.getElementById('feePercent').addEventListener('input', () => updatePreview(2));
+    document.getElementById('usdRate').addEventListener('input', () => updatePreview(3));
+    document.getElementById('salaryPercent').addEventListener('input', () => updatePreview(4));
+    document.getElementById('participants').addEventListener('input', () => updatePreview(5));
     
-    // Simulate small delay for better UX
-    setTimeout(() => {
-        originalCalculateSalary();
-        hideLoading();
-    }, 500);
-};
+    // Add Enter key support
+    document.querySelectorAll('input').forEach((input, index) => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (currentStep < 5) {
+                    nextStep(currentStep);
+                } else if (currentStep === 5) {
+                    calculateFinal();
+                }
+            }
+        });
+    });
+    
+    // Initialize progress
+    updateProgress();
+});
